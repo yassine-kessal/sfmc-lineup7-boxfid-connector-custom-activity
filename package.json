@@ -1,0 +1,35 @@
+{
+  "name": "sfmc-lineup7-boxfid-connector-custom-activity",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start:server": "node index.js",
+    "build:frontend": "vite build --emptyOutDir",
+    "watch": "concurrently \"npm:watch:frontend\" \"npm:watch:server\"",
+    "watch:frontend": "vite",
+    "watch:server": "nodemon --watch resources --watch server --watch index.js index.js",
+    "prettier": "prettier --write \"**/*.js\""
+  },
+  "author": "Yassine Kessal <yassine.kessal@lineup7.fr>",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/static": "^6.6.0",
+    "axios": "^1.2.1",
+    "dotenv": "^16.0.3",
+    "fastify": "^4.10.2",
+    "postmonger": "^0.0.16",
+    "react": "^18.2.0",
+    "react-datepicker": "^4.8.0",
+    "react-dom": "^18.2.0",
+    "react-select": "^5.7.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^3.0.0",
+    "buffer": "^5.7.1",
+    "concurrently": "^7.6.0",
+    "nodemon": "^2.0.20",
+    "prettier": "^2.8.0",
+    "vite": "^4.0.1",
+    "vite-plugin-static-copy": "^0.13.0"
+  }
+}
