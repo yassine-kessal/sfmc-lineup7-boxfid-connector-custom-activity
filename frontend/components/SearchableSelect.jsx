@@ -12,6 +12,7 @@ export default function SearchableSelect({
   onChange,
   components,
   isCreatable = false,
+  error = false,
 }) {
   const p = {
     components,
@@ -28,7 +29,7 @@ export default function SearchableSelect({
         borderTop: "none",
         borderLeft: "none",
         borderRight: "none",
-        borderColor: "#E5E5E5",
+        borderColor: error ? "red" : "#E5E5E5",
         marginTop: "5px",
       }),
     },
@@ -65,6 +66,7 @@ export default function SearchableSelect({
       ) : (
         <Select {...p} />
       )}
+      {error && <span style={{ color: "red" }}>Le champ est obligatoire</span>}
     </div>
   );
 }

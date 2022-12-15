@@ -20,7 +20,9 @@ const getEventSchemaFields = (payload) => {
      */
     fields.push({
       value: "{{" + field.key + "}}",
-      label: field.key.substring(field.key.lastIndexOf(".") + 1),
+      label:
+        "Data Extension -> " +
+        field.key.substring(field.key.lastIndexOf(".") + 1),
     });
   }
 
@@ -97,4 +99,20 @@ m110 0 c-2 -27 -7 -33 -27 -33 -28 0 -47 25 -38 49 4 10 18 16 37 16 29 0 31
   );
 };
 
-export { getEventSchemaFields, DatabaseDropdownIndicator, DatePickerIcon };
+const isNull = (value) => {
+  return (
+    typeof value === undefined ||
+    value === null ||
+    value === undefined ||
+    String(value) === "" ||
+    value === "null" ||
+    String(value).trim() === ""
+  );
+};
+
+export {
+  getEventSchemaFields,
+  DatabaseDropdownIndicator,
+  DatePickerIcon,
+  isNull,
+};

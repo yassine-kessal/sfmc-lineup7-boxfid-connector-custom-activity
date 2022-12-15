@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Input from "./../components/Input";
 import SearchableSelect from "./../components/SearchableSelect";
 import axios from "axios";
@@ -8,6 +8,7 @@ import {
   DatabaseDropdownIndicator,
   DatePickerIcon,
   getEventSchemaFields,
+  isNull,
 } from "../utils";
 import DatePicker, { registerLocale } from "react-datepicker";
 import fr from "date-fns/locale/fr";
@@ -30,10 +31,18 @@ export { connection };
  */
 setupTestMock(connection);
 
+connection.on("clickedNext", () => {
+  window.save();
+});
+
 /**
- *
+ * TODO :
+ * - Rajouter et peaufiner le controle (integer et date)
+ * - Préparer speech et ce qui reste a faire
  */
 export default function Home() {
+  const [activityState, setActivityState] = useState(null);
+  const [editable, setEditable] = useState(true);
   const [activityName, setActivityName] = useState(null);
   const [activityDescription, setActivityDescription] = useState(null);
   const [eventList, setEventList] = useState([]);
@@ -41,7 +50,8 @@ export default function Home() {
   const [datePickerIsOpen, setDatePickerIsOpen] = useState(false);
 
   const [startDate, setStartDate] = useState(new Date());
-  const toggleDatePickerIsOpen = () => setDatePickerIsOpen(!datePickerIsOpen);
+  const toggleDatePickerIsOpen = () =>
+    setDatePickerIsOpen(!datePickerIsOpen && editable);
 
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isDynamicEvent, setIsDynamicEvent] = useState(false);
@@ -52,7 +62,7 @@ export default function Home() {
   const [selectedLoyaltyPoints, setSelectedLoyaltyPoints] = useState(null);
 
   useEffect(() => {
-    const event = eventList.find((e) => e.id === selectedEvent.value);
+    const event = eventList.find((e) => e.id === selectedEvent?.value);
 
     setIsDynamicEvent(event?.is_dynamic);
   }, [selectedEvent]);
@@ -60,7 +70,11 @@ export default function Home() {
   useEffect(() => {
     (async () => {
       try {
-        const req = await axios.get("http://localhost:3000/event-list");
+        const url = import.meta.env.DEV
+          ? "http://localhost:3000/event-list/"
+          : "/event-list/";
+
+        const req = await axios.get(url);
 
         setEventList(req.data);
       } catch (e) {
@@ -71,10 +85,24 @@ export default function Home() {
     connection.on("initActivity", (payload) => {
       console.log("initActivity", payload);
 
-      setActivityName(payload.name);
+      setActivityState({ ...payload });
 
-      if (payload.description) {
-        setActivityDescription(payload.description);
+      setActivityName(payload.name || "Lineup7 Boxfid");
+
+      setEditable(payload.editable);
+
+      if (payload.metaData?.description != undefined) {
+        setActivityDescription(payload.metaData?.description);
+      }
+
+      if (payload.arguments?.execute?.inArguments?.length > 0) {
+        const inArguments = payload.arguments.execute.inArguments[0];
+
+        setSelectedEvent(inArguments.eventList);
+        setSelectedLoyaltyAccount(inArguments.loyaltyAccount);
+        setSelectedLoyaltyStore(inArguments.loyaltyStore);
+        setSelectedLoyaltyEventDateSelect(inArguments.loyaltyEventDateSelect);
+        setSelectedLoyaltyPoints(inArguments.loyaltyPoints);
       }
     });
 
@@ -86,8 +114,93 @@ export default function Home() {
     connection.trigger("requestSchema");
   }, []);
 
+  useEffect(() => {
+    if (
+      selectedEvent == null ||
+      selectedLoyaltyAccount == null ||
+      selectedLoyaltyStore == null ||
+      selectedLoyaltyEventDateSelect == null
+    ) {
+      console.log(
+        selectedEvent,
+        selectedLoyaltyAccount,
+        selectedLoyaltyStore,
+        selectedLoyaltyEventDateSelect
+      );
+      console.log("disable next button (1)");
+      connection.trigger("updateButton", { button: "next", enabled: false });
+    } else {
+      console.log("enable next button (3)");
+
+      if (isDynamicEvent && selectedLoyaltyPoints == null) {
+        console.log("disable next button (2)");
+        connection.trigger("updateButton", { button: "next", enabled: false });
+      } else {
+        connection.trigger("updateButton", { button: "next", enabled: true });
+      }
+    }
+  }, [
+    activityState,
+    activityName,
+    selectedEvent,
+    selectedLoyaltyAccount,
+    selectedLoyaltyStore,
+    selectedLoyaltyEventDateSelect,
+    selectedLoyaltyPoints,
+    isDynamicEvent,
+  ]);
+
+  window.save = useCallback(() => {
+    const payload = { ...activityState };
+
+    payload.name = activityName;
+    payload.metaData.description = activityDescription;
+
+    const newInArguments = {
+      eventList: selectedEvent,
+      loyaltyAccount: selectedLoyaltyAccount,
+      loyaltyStore: selectedLoyaltyStore,
+      loyaltyEventDateSelect: selectedLoyaltyEventDateSelect,
+      loyaltyPoints: selectedLoyaltyPoints,
+    };
+
+    payload.arguments.execute.inArguments = [newInArguments];
+
+    payload.metaData.isConfigured = true;
+
+    console.log("updated activity", JSON.stringify(payload));
+
+    connection.trigger("updateActivity", payload);
+  }, [
+    activityState,
+    activityName,
+    activityDescription,
+    selectedEvent,
+    selectedLoyaltyAccount,
+    selectedLoyaltyStore,
+    selectedLoyaltyEventDateSelect,
+    selectedLoyaltyPoints,
+  ]);
+
+  if (activityState === null) {
+    return (
+      <div className="demo-only">
+        <div className="slds-spinner_container">
+          <div
+            role="status"
+            className="slds-spinner slds-spinner_medium slds-spinner_brand"
+          >
+            <span className="slds-assistive-text">Loading</span>
+            <div className="slds-spinner__dot-a"></div>
+            <div className="slds-spinner__dot-b"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <>
+    <div style={{ paddingLeft: 5, paddingRight: 5 }}>
       <div className="activity-detail slds-grid slds-m-bottom_medium">
         <div className="slds-col slds-size_1-of-2 slds-p-right_small activity-name-container">
           <Input
@@ -96,6 +209,8 @@ export default function Home() {
             defaultValue={activityName}
             onChange={(e) => setActivityName(e.target.value)}
             required={true}
+            error={isNull(activityName)}
+            disabled={!editable}
           />
         </div>
 
@@ -105,10 +220,10 @@ export default function Home() {
             label="Description"
             defaultValue={activityDescription}
             onChange={(e) => setActivityDescription(e.target.value)}
+            disabled={!editable}
           />
         </div>
       </div>
-
       <div
         className="slds-grid slds-grid_vertical"
         style={{ rowGap: "20px", marginTop: "40px" }}
@@ -122,7 +237,10 @@ export default function Home() {
             }))}
             label="Évènement"
             required={true}
+            value={selectedEvent}
             onChange={(e) => setSelectedEvent(e)}
+            error={isNull(selectedEvent)}
+            isDisabled={!editable}
           />
         </div>
 
@@ -134,7 +252,10 @@ export default function Home() {
             label="Identifiant compte fidélité"
             required={true}
             isCreatable={true}
+            value={selectedLoyaltyAccount}
             onChange={(e) => setSelectedLoyaltyAccount(e)}
+            error={isNull(selectedLoyaltyAccount)}
+            isDisabled={!editable}
           />
         </div>
 
@@ -146,7 +267,10 @@ export default function Home() {
             label="Identifiant magasin"
             required={true}
             isCreatable={true}
-            onCahnge={(e) => setSelectedLoyaltyStore(e)}
+            value={selectedLoyaltyStore}
+            onChange={(e) => setSelectedLoyaltyStore(e)}
+            error={isNull(selectedLoyaltyStore)}
+            isDisabled={!editable}
           />
         </div>
 
@@ -158,7 +282,7 @@ export default function Home() {
             gap: "20px",
           }}
         >
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, height: "80px" }}>
             <SearchableSelect
               components={{ DropdownIndicator: DatabaseDropdownIndicator }}
               id="loyaltyEventDateSelect"
@@ -168,15 +292,17 @@ export default function Home() {
               isCreatable={true}
               onChange={(e) => setSelectedLoyaltyEventDateSelect(e)}
               value={selectedLoyaltyEventDateSelect}
+              error={isNull(selectedLoyaltyEventDateSelect)}
+              isDisabled={!editable}
             />
           </div>
           <div
             className=""
             style={{
               display: "flex",
-              alignItems: "end",
+              alignItems: "top",
               justifyContent: "center",
-              marginBottom: "7px",
+              marginTop: "10px",
               marginRight: "10px",
               position: "relative",
             }}
@@ -221,11 +347,19 @@ export default function Home() {
               label="Valeur points"
               required={true}
               isCreatable={true}
-              onCahnge={(e) => setSelectedLoyaltyPoints(e)}
+              value={selectedLoyaltyPoints}
+              onChange={(e) => setSelectedLoyaltyPoints(e)}
+              error={isNull(selectedLoyaltyPoints) && isDynamicEvent}
+              isDisabled={!editable}
             />
           </div>
         )}
       </div>
-    </>
+      {import.meta.env.DEV && (
+        <div>
+          <button onClick={save}>DEV Save</button>
+        </div>
+      )}
+    </div>
   );
 }

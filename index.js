@@ -11,16 +11,19 @@ const activityFrontend = require("./server/routes/web/activity");
 const { default: axios } = require("axios");
 
 fastify.register(require("@fastify/static"), {
-  root: path.join(__dirname, "frontend"),
+  root: path.join(__dirname, "dist"),
 });
 
 // Frontend
 fastify.get("/", activityFrontend);
 fastify.get("/config.json", activityConfig);
 
-fastify.get("/event-list", async (req, reply) => {
+fastify.get("/event-list/", async (req, reply) => {
   // TODO : edit on production mode
   reply.header("Access-Control-Allow-Origin", "*");
+
+  console.log("process.env.BOXFID_BASEURI", process.env.BOXFID_BASEURI);
+  console.log("process.env.BOXFID_API_TOKEN", process.env.BOXFID_API_TOKEN);
 
   try {
     let eventListResult = [],
@@ -65,7 +68,7 @@ fastify.get("/event-list", async (req, reply) => {
 
 const start = async () => {
   try {
-    await fastify.listen(3000);
+    await fastify.listen({ port: process.env.PORT, host: "0.0.0.0" });
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

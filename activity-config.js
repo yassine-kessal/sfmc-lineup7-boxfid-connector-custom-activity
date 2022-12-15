@@ -6,21 +6,23 @@ module.exports = function configJSON(req) {
     workflowApiVersion: "1.1",
     metaData: {
       icon: "assets/lineup7-icon.png",
-      category: "flow",
+      category: "messages",
     },
     type: "RESTDECISION",
     name: "Lineup7 Boxfid",
     arguments: {
       execute: {
-        inArguments: [{}],
+        inArguments: [],
         outArguments: [],
-        url: `https://${req.headers.host}/execute`,
+        // url: `https://${req.headers.host}/execute`,
+        url: `https://eoq5trhuj41ha88.m.pipedream.net`,
         verb: "POST",
       },
     },
     configurationArguments: {
       publish: {
-        url: `https://${req.headers.host}/publish`,
+        // url: `https://${req.headers.host}/publish`,
+        url: `https://eoq5trhuj41ha88.m.pipedream.net`,
         verb: "POST",
       },
     },
@@ -37,14 +39,6 @@ module.exports = function configJSON(req) {
         },
         metaData: {
           label: "Success",
-        },
-      },
-      {
-        arguments: {
-          branchResult: "failed",
-        },
-        metaData: {
-          label: "Failed",
         },
       },
     ],

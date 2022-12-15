@@ -5,6 +5,7 @@
   "scripts": {
     "start:server": "node index.js",
     "build:frontend": "vite build --emptyOutDir",
+    "build": "npm run build:frontend",
     "watch": "concurrently \"npm:watch:frontend\" \"npm:watch:server\"",
     "watch:frontend": "vite",
     "watch:server": "nodemon --watch resources --watch server --watch index.js index.js",
