@@ -37,6 +37,7 @@ connection.on("clickedNext", () => {
 
 /**
  * TODO :
+ * - Corriger affichage de valeur points lors de la réouverture de la custom activity
  * - Rajouter et peaufiner le controle (integer et date)
  * - Préparer speech et ce qui reste a faire
  */
@@ -103,6 +104,10 @@ export default function Home() {
         setSelectedLoyaltyStore(inArguments.loyaltyStore);
         setSelectedLoyaltyEventDateSelect(inArguments.loyaltyEventDateSelect);
         setSelectedLoyaltyPoints(inArguments.loyaltyPoints);
+
+        if (inArguments.loyaltyPoints) {
+          setIsDynamicEvent(event?.is_dynamic);
+        }
       }
     });
 
