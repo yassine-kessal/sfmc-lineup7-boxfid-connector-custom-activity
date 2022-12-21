@@ -5,9 +5,6 @@ if (process.env.NODE_ENV !== "production") {
 
 const path = require("path").posix;
 const fastify = require("fastify")({ logger: true });
-
-const activityConfig = require("./server/routes/web/config");
-const activityFrontend = require("./server/routes/web/activity");
 const { default: axios } = require("axios");
 
 fastify.register(require("@fastify/static"), {
@@ -15,56 +12,22 @@ fastify.register(require("@fastify/static"), {
 });
 
 // Frontend
-fastify.get("/", activityFrontend);
-fastify.get("/config.json", activityConfig);
+fastify.get("/", require("./server/routes/web/activity"));
+fastify.get("/config.json", require("./server/routes/web/config"));
 
-fastify.get("/event-list/", async (req, reply) => {
-  // TODO : edit on production mode
-  reply.header("Access-Control-Allow-Origin", "*");
-
-  console.log("process.env.BOXFID_BASEURI", process.env.BOXFID_BASEURI);
-  console.log("process.env.BOXFID_API_TOKEN", process.env.BOXFID_API_TOKEN);
-
-  try {
-    let eventListResult = [],
-      page = 1,
-      hasMore = true;
-
-    while (hasMore) {
-      const uri = new URL(
-        "/api/engine/event-rule/",
-        process.env.BOXFID_BASEURI
-      );
-      uri.searchParams.set("page", page);
-      uri.searchParams.set("type_event", [8, 9, 10, 11]);
-      uri.searchParams.set("type_model", [2]);
-      uri.searchParams.set("active", true);
-
-      console.log("URI : ", uri.toString());
-
-      const eventList = await axios.get(uri, {
-        headers: {
-          Authorization: `Token ${process.env.BOXFID_API_TOKEN}`,
-        },
-      });
-
-      eventListResult.push(...eventList.data.results);
-
-      if (eventList.data.next) {
-        page++;
-      } else {
-        hasMore = false;
-        break;
-      }
-    }
-
-    return eventListResult;
-  } catch (e) {
-    console.log(e);
-  }
-});
+fastify.get(
+  "/event-list/",
+  { preHandler: require("./server/middlewares/authentication") },
+  require("./server/routes/api/event-list")
+);
 
 // Backend
+fastify.post("/publish", require("./server/routes/api/publish"));
+fastify.post(
+  "/execute",
+  { preHandler: require("./server/middlewares/authentication") },
+  require("./server/routes/api/execute")
+);
 
 const start = async () => {
   try {

@@ -11,11 +11,11 @@
     "execute": {
       "inArguments": [
         {
-          "file": {
-            "fileName": "",
-            "basePath": "/Extract/Files/"
-          },
-          "columns": []
+          "eventList": {
+            "value": 4,
+            "label": "Publication CulturaCréas",
+            "is_dynamic": true
+          }
         }
       ],
       "outArguments": [],

@@ -35,18 +35,14 @@ connection.on("clickedNext", () => {
   window.save();
 });
 
-/**
- * TODO :
- * - Corriger affichage de valeur points lors de la réouverture de la custom activity
- * - Rajouter et peaufiner le controle (integer et date)
- * - Préparer speech et ce qui reste a faire
- */
 export default function Home() {
+  const [isDEEntry, setIsDEEntry] = useState(true);
   const [activityState, setActivityState] = useState(null);
   const [editable, setEditable] = useState(true);
   const [activityName, setActivityName] = useState(null);
   const [activityDescription, setActivityDescription] = useState(null);
   const [eventList, setEventList] = useState([]);
+  const [eventListLoadError, setEventListLoadError] = useState(false);
   const [entryDEFields, setEntryDEFields] = useState([]);
   const [datePickerIsOpen, setDatePickerIsOpen] = useState(false);
 
@@ -59,13 +55,14 @@ export default function Home() {
   const [selectedLoyaltyAccount, setSelectedLoyaltyAccount] = useState(null);
   const [selectedLoyaltyStore, setSelectedLoyaltyStore] = useState(null);
   const [selectedLoyaltyEventDateSelect, setSelectedLoyaltyEventDateSelect] =
-    useState(null);
+    useState({
+      label: new Date().toLocaleDateString("en-US"),
+      value: new Date().toLocaleDateString("en-US"),
+    });
   const [selectedLoyaltyPoints, setSelectedLoyaltyPoints] = useState(null);
 
   useEffect(() => {
-    const event = eventList.find((e) => e.id === selectedEvent?.value);
-
-    setIsDynamicEvent(event?.is_dynamic);
+    setIsDynamicEvent(selectedEvent?.is_dynamic);
   }, [selectedEvent]);
 
   useEffect(() => {
@@ -77,8 +74,14 @@ export default function Home() {
 
         const req = await axios.get(url);
 
+        if (req.data.length == 0) {
+          setEventListLoadError(true);
+          return;
+        }
+
         setEventList(req.data);
       } catch (e) {
+        setEventListLoadError(true);
         console.log(e);
       }
     })();
@@ -99,10 +102,12 @@ export default function Home() {
       if (payload.arguments?.execute?.inArguments?.length > 0) {
         const inArguments = payload.arguments.execute.inArguments[0];
 
-        setSelectedEvent(inArguments.eventList);
+        setSelectedEvent(inArguments.event);
         setSelectedLoyaltyAccount(inArguments.loyaltyAccount);
         setSelectedLoyaltyStore(inArguments.loyaltyStore);
-        setSelectedLoyaltyEventDateSelect(inArguments.loyaltyEventDateSelect);
+        if (inArguments.loyaltyEventDateSelect) {
+          setSelectedLoyaltyEventDateSelect(inArguments.loyaltyEventDateSelect);
+        }
         setSelectedLoyaltyPoints(inArguments.loyaltyPoints);
 
         if (inArguments.loyaltyPoints) {
@@ -112,6 +117,11 @@ export default function Home() {
     });
 
     connection.on("requestedSchema", (payload) => {
+      if (payload.schema == null || payload.schema.length == 0) {
+        setIsDEEntry(false);
+        return;
+      }
+
       setEntryDEFields(getEventSchemaFields(payload));
     });
 
@@ -126,12 +136,6 @@ export default function Home() {
       selectedLoyaltyStore == null ||
       selectedLoyaltyEventDateSelect == null
     ) {
-      console.log(
-        selectedEvent,
-        selectedLoyaltyAccount,
-        selectedLoyaltyStore,
-        selectedLoyaltyEventDateSelect
-      );
       console.log("disable next button (1)");
       connection.trigger("updateButton", { button: "next", enabled: false });
     } else {
@@ -162,13 +166,17 @@ export default function Home() {
     payload.metaData.description = activityDescription;
 
     const newInArguments = {
-      eventList: selectedEvent,
+      activity: {
+        activityName,
+      },
+      event: selectedEvent,
       loyaltyAccount: selectedLoyaltyAccount,
       loyaltyStore: selectedLoyaltyStore,
       loyaltyEventDateSelect: selectedLoyaltyEventDateSelect,
       loyaltyPoints: selectedLoyaltyPoints,
     };
 
+    // test
     payload.arguments.execute.inArguments = [newInArguments];
 
     payload.metaData.isConfigured = true;
@@ -200,6 +208,35 @@ export default function Home() {
             <div className="slds-spinner__dot-b"></div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (isDEEntry == false) {
+    return (
+      <div
+        className="slds-notify slds-notify_alert slds-alert_warning"
+        role="alert"
+      >
+        <span className="slds-assistive-text">Attention</span>
+        <h2>
+          Veuillez sélectionner une Data Extension en entrée de la journey.
+        </h2>
+      </div>
+    );
+  }
+
+  if (eventListLoadError) {
+    return (
+      <div
+        className="slds-notify slds-notify_alert slds-alert_error"
+        role="alert"
+      >
+        <span className="slds-assistive-text">Attention</span>
+        <h2>
+          Impossible de charger les événements. Veuillez contacter votre
+          administrateur.
+        </h2>
       </div>
     );
   }
@@ -239,6 +276,7 @@ export default function Home() {
             options={eventList.map((event) => ({
               value: event.id,
               label: event.title,
+              is_dynamic: event.is_dynamic,
             }))}
             label="Évènement"
             required={true}
@@ -294,12 +332,12 @@ export default function Home() {
               options={entryDEFields}
               label="Date de l'événements"
               required={true}
-              isCreatable={true}
               onChange={(e) => setSelectedLoyaltyEventDateSelect(e)}
               value={selectedLoyaltyEventDateSelect}
               error={isNull(selectedLoyaltyEventDateSelect)}
               isDisabled={!editable}
             />
+            Format : MM/JJ/YYYY
           </div>
           <div
             className=""
@@ -326,8 +364,9 @@ export default function Home() {
               {datePickerIsOpen && (
                 <DatePicker
                   startDate={startDate}
+                  // minDate={new Date().setDate(new Date().getDate() + 1)}
                   onChange={(date) => {
-                    const formattedDate = date.toLocaleDateString("fr");
+                    const formattedDate = date.toLocaleDateString("en-US");
                     setSelectedLoyaltyEventDateSelect({
                       value: formattedDate,
                       label: formattedDate,

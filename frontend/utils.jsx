@@ -18,8 +18,11 @@ const getEventSchemaFields = (payload) => {
     /**
      * Add the field to the fields array
      */
+    const base = field.key.split(".");
+    const chainedField = '"' + base.pop() + '"';
+
     fields.push({
-      value: "{{" + field.key + "}}",
+      value: "{{" + base.join(".") + "." + chainedField + "}}",
       label:
         "Data Extension -> " +
         field.key.substring(field.key.lastIndexOf(".") + 1),

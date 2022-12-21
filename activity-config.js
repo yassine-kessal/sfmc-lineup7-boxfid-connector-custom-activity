@@ -14,15 +14,13 @@ module.exports = function configJSON(req) {
       execute: {
         inArguments: [],
         outArguments: [],
-        // url: `https://${req.headers.host}/execute`,
-        url: `https://eoq5trhuj41ha88.m.pipedream.net`,
+        url: `https://${req.headers.host}/execute`,
         verb: "POST",
       },
     },
     configurationArguments: {
       publish: {
-        // url: `https://${req.headers.host}/publish`,
-        url: `https://eoq5trhuj41ha88.m.pipedream.net`,
+        url: `https://${req.headers.host}/publish`,
         verb: "POST",
       },
     },
@@ -38,7 +36,15 @@ module.exports = function configJSON(req) {
           branchResult: "success",
         },
         metaData: {
-          label: "Success",
+          label: "Réussi",
+        },
+      },
+      {
+        arguments: {
+          branchResult: "failed",
+        },
+        metaData: {
+          label: "Refusé",
         },
       },
     ],
