@@ -66,27 +66,7 @@ export default function Home() {
   }, [selectedEvent]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const url = import.meta.env.DEV
-          ? "http://localhost:3000/event-list/"
-          : "/event-list/";
-
-        const req = await axios.get(url);
-
-        if (req.data.length == 0) {
-          setEventListLoadError(true);
-          return;
-        }
-
-        setEventList(req.data);
-      } catch (e) {
-        setEventListLoadError(true);
-        console.log(e);
-      }
-    })();
-
-    connection.on("initActivity", (payload) => {
+    connection.on("initActivity", async (payload) => {
       console.log("initActivity", payload);
 
       setActivityState({ ...payload });
@@ -94,6 +74,26 @@ export default function Home() {
       setActivityName(payload.name || "Lineup7 Boxfid");
 
       setEditable(payload.editable);
+
+      if (payload.editable) {
+        try {
+          const url = import.meta.env.DEV
+            ? "http://localhost:3000/event-list/"
+            : "/event-list/";
+
+          const req = await axios.get(url);
+
+          if (req.data.length == 0) {
+            setEventListLoadError(true);
+            return;
+          }
+
+          setEventList(req.data);
+        } catch (e) {
+          setEventListLoadError(true);
+          console.log(e);
+        }
+      }
 
       if (payload.metaData?.description != undefined) {
         setActivityDescription(payload.metaData?.description);
