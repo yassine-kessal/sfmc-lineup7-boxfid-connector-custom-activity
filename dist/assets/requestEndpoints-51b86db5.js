@@ -1,1 +1,0 @@
-const t="rest.s7.exacttarget.com",s="S7",e="mc.s7.exacttarget.com",c="https://mc.s7.exacttarget.com/cloud/tools/SSO.aspx?env=default&legacy=1&sk=S7",o="https://www-mc-s7.exacttargetapis.com/",a={restHost:t,stackKey:s,stackHost:e,ssoUrl:c,fuelapiRestHost:o};export{a as default,o as fuelapiRestHost,t as restHost,c as ssoUrl,e as stackHost,s as stackKey};

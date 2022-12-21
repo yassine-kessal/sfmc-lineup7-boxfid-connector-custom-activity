@@ -2,3 +2,6 @@
 .env
 package-lock.json
 node_modules
+./dist
+dist
+./temp/auth.json
