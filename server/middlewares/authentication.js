@@ -17,16 +17,18 @@ const readAccessTokenFromTempFile = async () => {
 };
 
 const isAccessTokenValid = (authObj) => {
-  const now = new Date();
-  const expiredAt = new Date(now.getTime() + (authObj.expires_in - 120) * 1000);
+  const createdAtTs = authObj.created_at;
+  const expiredAtTs = new Date(
+    createdAtTs + (authObj.expires_in - 120) * 1000
+  ).getTime();
 
   console.log(
     "isAccessTokenValid",
-    now,
-    expiredAt,
-    now.getTime() < expiredAt.getTime()
+    new Date(),
+    new Date(expiredAtTs),
+    createdAtTs < expiredAtTs
   );
-  return now.getTime() < expiredAt.getTime();
+  return new Date().getTime() < expiredAtTs;
 };
 
 const requestNewAccessToken = async () => {
@@ -52,7 +54,13 @@ const requestNewAccessToken = async () => {
 
 const writeAccessTokenToTempFile = async (authObj) => {
   try {
-    await fs.writeFile(authObjFilePath, JSON.stringify(authObj));
+    await fs.writeFile(
+      authObjFilePath,
+      JSON.stringify({
+        ...authObj,
+        created_at: new Date().getTime(),
+      })
+    );
 
     return true;
   } catch (e) {
