@@ -21,14 +21,15 @@ const isAccessTokenValid = (authObj) => {
   const expiredAtTs = new Date(
     createdAtTs + (authObj.expires_in - 120) * 1000
   ).getTime();
+  const now = new Date();
 
   console.log(
     "isAccessTokenValid",
-    new Date(),
+    now,
     new Date(expiredAtTs),
     createdAtTs < expiredAtTs
   );
-  return new Date().getTime() < expiredAtTs;
+  return now.getTime() < expiredAtTs;
 };
 
 const requestNewAccessToken = async () => {
