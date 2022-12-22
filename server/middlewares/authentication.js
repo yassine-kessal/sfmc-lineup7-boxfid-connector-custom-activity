@@ -18,18 +18,16 @@ const readAccessTokenFromTempFile = async () => {
 
 const isAccessTokenValid = (authObj) => {
   const createdAtTs = authObj.created_at;
-  const expiredAtTs = new Date(
-    createdAtTs + (authObj.expires_in - 120) * 1000
-  ).getTime();
+  const expiredAt = new Date(createdAtTs + (authObj.expires_in - 120) * 1000);
   const now = new Date();
 
   console.log(
     "isAccessTokenValid",
     now,
-    new Date(expiredAtTs),
-    createdAtTs < expiredAtTs
+    expiredAt,
+    now.getTime() < expiredAt.getTime()
   );
-  return now.getTime() < expiredAtTs;
+  return now.getTime() < expiredAt.getTime();
 };
 
 const requestNewAccessToken = async () => {
